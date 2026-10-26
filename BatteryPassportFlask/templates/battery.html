@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ battery["battery_id"] }} | Battery Passport</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page-shell detail-shell">
+        <header class="topbar detail-topbar">
+            <div class="brand-wrap">
+                <div class="brand-mark">V</div>
+                <div>
+                    <p class="brand-name">VoltTrace</p>
+                    <span class="brand-tag">Passport detail</span>
+                </div>
+            </div>
+            <div class="top-actions">
+                <a class="nav-button secondary" href="{{ url_for('home') }}">← Back to dashboard</a>
+                <a class="nav-button" href="{{ url_for('battery_ai', battery_id=battery['battery_id']) }}">AI analysis</a>
+            </div>
+        </header>
+
+        <main class="detail-layout">
+            <section class="detail-hero">
+                <div>
+                    <p class="eyebrow">Battery record</p>
+                    <h1>{{ battery["battery_id"] }}</h1>
+                </div>
+                <div class="detail-badges">
+                    <span>{{ battery["chemistry"] }}</span>
+                    <span>{{ battery["manufacturer_name"] or "Unknown manufacturer" }}</span>
+                </div>
+            </section>
+
+            <section class="summary-grid">
+                <div class="summary-item">
+                    <span class="label">QR ID</span>
+                    <strong>{{ battery["qr_id"] }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Capacity</span>
+                    <strong>{{ battery["capacity"] }} kWh</strong>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Voltage</span>
+                    <strong>{{ battery["voltage"] }} V</strong>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Manufacture date</span>
+                    <strong>{{ battery["manufacture_date"] }}</strong>
+                </div>
+            </section>
+
+            <section class="info-grid">
+                <article class="card">
+                    <h2>Machine-learning SoH estimate</h2>
+                    {% if soh_prediction %}
+                    <p><strong>Estimated SoH:</strong> {{ soh_prediction["estimated_soh"] }}%</p>
+                    <p>Estimated from {{ soh_prediction["training_records"] }} fleet service records at {{ soh_prediction["charge_cycles"] }} charge cycles.</p>
+                    <p class="assist-copy">Experimental fleet-wide linear regression. The estimate is only shown within the training data's {{ soh_prediction["min_cycles"] }}–{{ soh_prediction["max_cycles"] }} cycle range; it is not a battery-specific degradation forecast.</p>
+                    {% else %}
+                    <p>Not enough comparable service-history data to produce a reliable estimate. At least three valid readings with different cycle counts are required, and predictions are limited to the observed cycle range.</p>
+                    {% endif %}
+                </article>
+
+                <article class="card">
+                    <h2>Service history</h2>
+                    {% if services %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>SoH</th>
+                                <th>Cycles</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in services %}
+                            <tr>
+                                <td data-label="Date">{{ service["service_date"] }}</td>
+                                <td data-label="SoH">{{ service["soh"] }}%</td>
+                                <td data-label="Cycles">{{ service["charge_cycles"] }}</td>
+                                <td data-label="Remarks">{{ service["remarks"] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No service history available.</p>
+                    {% endif %}
+                </article>
+
+                <article class="card">
+                    <h2>Ownership & recycling</h2>
+                    {% if ownership %}
+                    <div class="ownership-box">
+                        <p><strong>Owner:</strong> {{ ownership["owner_name"] }}</p>
+                        <p><strong>From:</strong> {{ ownership["from_date"] }}</p>
+                        <p><strong>To:</strong> {{ ownership["to_date"] }}</p>
+                    </div>
+                    {% else %}
+                    <p>No ownership record available.</p>
+                    {% endif %}
+
+                    {% if recycling %}
+                    <div class="recycling-box">
+                        <p><strong>Status:</strong> {{ recycling["recycling_status"] }}</p>
+                        <p><strong>Recycler:</strong> {{ recycling["recycler"] or "N/A" }}</p>
+                        <p><strong>Recovery:</strong> {{ recycling["recovery_percent"] or "N/A" }}{% if recycling["recovery_percent"] is not none %}%{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </article>
+
+                <article class="card">
+                    <h2>Blockchain ledger</h2>
+                    {% if ledger %}
+                    <ul class="ledger-list">
+                        {% for entry in ledger %}
+                        <li>
+                            <span>{{ entry["event"] }}</span>
+                            <small>{{ entry["timestamp"] or "Timestamp unavailable" }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p>No ledger entries available.</p>
+                    {% endif %}
+                </article>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
